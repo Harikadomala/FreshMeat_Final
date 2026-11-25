@@ -15,7 +15,11 @@ from werkzeug.utils import secure_filename
 from database import get_db_connection, init_db
 
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    static_url_path="/admin/static",
+    static_folder="static"
+)
 app.secret_key = "freshmeet_admin_secret_key"
 
 app.config["UPLOAD_FOLDER"] = "/tmp/admin_uploads"
