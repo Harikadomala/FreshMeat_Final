@@ -182,7 +182,7 @@ def setup_database():
     """)
 
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS riders (
+        CREATE TABLE IF NOT EXISTS seller_riders (
             id BIGINT AUTO_INCREMENT PRIMARY KEY,
             seller_id BIGINT NOT NULL,
             rider_name VARCHAR(255) NOT NULL,
