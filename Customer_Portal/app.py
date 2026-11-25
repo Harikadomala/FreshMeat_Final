@@ -99,7 +99,7 @@ def get_db():
     return MySQLConnection(pymysql.connect(
         host=os.getenv('DB_HOST', 'localhost'),
         user=os.getenv('DB_USER', 'root'),
-        password=os.getenv('DB_PASSWORD', 'Santhi@17'),
+        password=os.getenv('DB_PASSWORD'),
         database=os.getenv('DB_NAME', 'premiumfreshmeat'),
         port=int(os.getenv('DB_PORT', '3306')),
         charset='utf8mb4',
