@@ -63,6 +63,20 @@
       }
     },
     {
+      "source": "/api/seller",
+      "destination": {
+        "service": "seller_portal",
+        "path": "/api/seller"
+      }
+    },
+    {
+      "source": "/api/seller/(.*)",
+      "destination": {
+        "service": "seller_portal",
+        "path": "/api/seller/$1"
+      }
+    },
+    {
       "source": "/(.*)",
       "destination": {
         "service": "customer_portal"
