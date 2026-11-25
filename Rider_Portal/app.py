@@ -1,5 +1,3 @@
-
-
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -72,7 +70,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv("FRESHMEAT_SECRET_KEY")
 
 # Rider document storage
-UPLOAD_FOLDER = os.path.join(app.instance_path, "rider_documents")
+UPLOAD_FOLDER = "/tmp/rider_documents"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
