@@ -264,6 +264,7 @@ def login():
 
 
 @app.route("/dashboard")
+@app.route("/admin/dashboard")
 @admin_required
 def dashboard():
 
