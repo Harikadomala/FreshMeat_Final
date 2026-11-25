@@ -873,7 +873,7 @@ def get_riders():
     try:
         cursor.execute("""
             SELECT *
-            FROM riders
+            FROM seller_riders
             WHERE seller_id = %s
             ORDER BY id DESC
         """, (get_seller_id(),))
