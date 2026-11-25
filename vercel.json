@@ -1,9 +1,32 @@
+
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "services": {
     "admin_portal": {
       "root": "Admin_Portal",
-      "framework": "flask"
+      "framework": "flask",
+      "routes": [
+        {
+          "src": "/admin",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/"
+            }
+          ]
+        },
+        {
+          "src": "/admin/(.*)",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/$1"
+            }
+          ]
+        }
+      ]
     },
     "customer_portal": {
       "root": "Customer_Portal",
@@ -11,12 +34,99 @@
     },
     "rider_portal": {
       "root": "Rider_Portal",
-      "framework": "flask"
+      "framework": "flask",
+      "routes": [
+        {
+          "src": "/rider",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/"
+            }
+          ]
+        },
+        {
+          "src": "/rider/(.*)",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/$1"
+            }
+          ]
+        }
+      ]
     },
     "seller_portal": {
       "root": "Seller_Portal",
-      "framework": "flask"
+      "framework": "flask",
+      "routes": [
+        {
+          "src": "/seller",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/"
+            }
+          ]
+        },
+        {
+          "src": "/seller/(.*)",
+          "transforms": [
+            {
+              "type": "request.path",
+              "op": "set",
+              "args": "/$1"
+            }
+          ]
+        }
+      ]
     }
   },
-  "rewrites": []
+  "rewrites": [
+    {
+      "source": "/admin",
+      "destination": {
+        "service": "admin_portal"
+      }
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": {
+        "service": "admin_portal"
+      }
+    },
+    {
+      "source": "/rider",
+      "destination": {
+        "service": "rider_portal"
+      }
+    },
+    {
+      "source": "/rider/(.*)",
+      "destination": {
+        "service": "rider_portal"
+      }
+    },
+    {
+      "source": "/seller",
+      "destination": {
+        "service": "seller_portal"
+      }
+    },
+    {
+      "source": "/seller/(.*)",
+      "destination": {
+        "service": "seller_portal"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "customer_portal"
+      }
+    }
+  ]
 }
