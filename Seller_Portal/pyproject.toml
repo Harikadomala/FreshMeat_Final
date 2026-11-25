@@ -1,2 +1,11 @@
+[project]
+name = "seller-portal"
+version = "1.0.0"
+dependencies = [
+    "Flask",
+    "mysql-connector-python",
+    "Werkzeug"
+]
+
 [tool.vercel]
 entrypoint = "seller:app"
