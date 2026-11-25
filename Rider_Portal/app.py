@@ -321,6 +321,17 @@ def register():
             if cursor.fetchone():
                 flash("Driving licence already registered!", "error")
                 return redirect(url_for("register"))
+            cursor.execute(
+               "SELECT rider_id FROM riders WHERE vehicle_number = %s",
+               (vehicle,)
+            )
+            if cursor.fetchone():
+                
+                flash("Vehicle number already registered!", "error")
+                return redirect(url_for("register"))
+    
+    
+               
 
             password_hash = generate_password_hash(password)
 
