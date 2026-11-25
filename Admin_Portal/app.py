@@ -180,6 +180,8 @@ MODULES = {
 
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/admin", methods=["GET", "POST"])
+@app.route("/admin/", methods=["GET", "POST"])
 @app.route("/login", methods=["GET", "POST"])
 def login():
 
