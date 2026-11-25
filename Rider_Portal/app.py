@@ -353,7 +353,7 @@ def register():
 
 # ---------------- RIDER LOGIN ----------------
 
-@app.route("/login", methods=["GET", "POST"])
+@app.route("/rider/login", methods=["GET", "POST"])
 def login():
 
     if request.method == "POST":
