@@ -24,7 +24,7 @@
       "source": "/admin/static/(.*)",
       "destination": {
         "service": "admin_portal",
-        "path": "/static/$1"
+        "path": "admin/static/$1"
       }
     },
     {
