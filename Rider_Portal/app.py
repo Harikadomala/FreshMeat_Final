@@ -100,7 +100,7 @@ except mysql.connector.Error as err:
 
 # ---------------- RIDER DOCUMENT STORAGE ----------------
 
-UPLOAD_FOLDER = os.path.join(app.instance_path, "rider_documents")
+UPLOAD_FOLDER = "/tmp/rider_documents"
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
