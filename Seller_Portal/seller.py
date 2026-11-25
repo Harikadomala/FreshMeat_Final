@@ -208,7 +208,7 @@ def setup_database():
             delivered_at TIMESTAMP NULL,
             FOREIGN KEY (seller_id) REFERENCES sellers(id),
             FOREIGN KEY (order_id) REFERENCES orders(id),
-            FOREIGN KEY (rider_id) REFERENCES riders(id)
+            FOREIGN KEY (rider_id) REFERENCES seller_riders(id)
         )
     """)
 
@@ -915,7 +915,7 @@ def add_rider():
 
     try:
         cursor.execute("""
-            INSERT INTO riders (
+            INSERT INTO seller_riders (
                 seller_id, rider_name, phone,
                 vehicle_number, vehicle_type
             )
@@ -1029,7 +1029,7 @@ def assign_order_rider(order_id):
 
         cursor.execute("""
             SELECT *
-            FROM riders
+            FROM seller_riders
             WHERE id = %s
               AND seller_id = %s
               AND availability = 'Available'
@@ -1077,7 +1077,7 @@ def assign_order_rider(order_id):
         """, (seller_id, order_id, rider_id))
 
         cursor.execute("""
-            UPDATE riders
+            UPDATE seller_riders
             SET availability = 'Busy'
             WHERE id = %s AND seller_id = %s
         """, (rider_id, seller_id))
@@ -1120,7 +1120,7 @@ def get_rider_assignments():
                 r.vehicle_number,
                 r.vehicle_type
             FROM rider_assignments ra
-            JOIN riders r ON r.id = ra.rider_id
+            JOIN seller_riders r ON r.id = ra.rider_id
             WHERE ra.seller_id = %s
             ORDER BY ra.id DESC
         """, (get_seller_id(),))
@@ -1210,7 +1210,7 @@ def update_rider_status(assignment_id):
             """, (status, assignment_id))
 
             cursor.execute("""
-                UPDATE riders
+                UPDATE seller_riders
                 SET availability = 'Available'
                 WHERE id = %s AND seller_id = %s
             """, (assignment["rider_id"], get_seller_id()))
