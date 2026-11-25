@@ -18,7 +18,7 @@ app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 FRONTEND_FOLDER = os.path.join(BASE_DIR, "frontend")
-UPLOAD_FOLDER = os.path.join(FRONTEND_FOLDER, "uploads")
+UPLOAD_FOLDER = "/tmp/seller_uploads"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
