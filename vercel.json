@@ -4,122 +4,62 @@
   "services": {
     "admin_portal": {
       "root": "Admin_Portal",
-      "framework": "flask",
-      "routes": [
-        {
-          "src": "/admin",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/"
-            }
-          ]
-        },
-        {
-          "src": "/admin/(.*)",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/$1"
-            }
-          ]
-        }
-      ]
+      "entrypoint": "app:app"
     },
     "customer_portal": {
       "root": "Customer_Portal",
-      "framework": "flask"
+      "entrypoint": "app:app"
     },
     "rider_portal": {
       "root": "Rider_Portal",
-      "framework": "flask",
-      "routes": [
-        {
-          "src": "/rider",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/"
-            }
-          ]
-        },
-        {
-          "src": "/rider/(.*)",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/$1"
-            }
-          ]
-        }
-      ]
+      "entrypoint": "app:app"
     },
     "seller_portal": {
       "root": "Seller_Portal",
-      "framework": "flask",
-      "routes": [
-        {
-          "src": "/seller",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/"
-            }
-          ]
-        },
-        {
-          "src": "/seller/(.*)",
-          "transforms": [
-            {
-              "type": "request.path",
-              "op": "set",
-              "args": "/$1"
-            }
-          ]
-        }
-      ]
+      "entrypoint": "seller:app"
     }
   },
   "rewrites": [
     {
       "source": "/admin",
       "destination": {
-        "service": "admin_portal"
+        "service": "admin_portal",
+        "path": "/"
       }
     },
     {
       "source": "/admin/(.*)",
       "destination": {
-        "service": "admin_portal"
+        "service": "admin_portal",
+        "path": "/$1"
       }
     },
     {
       "source": "/rider",
       "destination": {
-        "service": "rider_portal"
+        "service": "rider_portal",
+        "path": "/"
       }
     },
     {
       "source": "/rider/(.*)",
       "destination": {
-        "service": "rider_portal"
+        "service": "rider_portal",
+        "path": "/$1"
       }
     },
     {
       "source": "/seller",
       "destination": {
-        "service": "seller_portal"
+        "service": "seller_portal",
+        "path": "/"
       }
     },
     {
       "source": "/seller/(.*)",
       "destination": {
-        "service": "seller_portal"
+        "service": "seller_portal",
+        "path": "/$1"
       }
     },
     {
