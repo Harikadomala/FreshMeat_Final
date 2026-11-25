@@ -21,17 +21,24 @@
   },
   "rewrites": [
     {
+      "source": "/admin/static/(.*)",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/static/$1"
+      }
+    },
+    {
       "source": "/admin",
       "destination": {
         "service": "admin_portal",
-        "path": "/"
+        "path": "/admin"
       }
     },
     {
       "source": "/admin/(.*)",
       "destination": {
         "service": "admin_portal",
-        "path": "/$1"
+        "path": "/admin/$1"
       }
     },
     {
