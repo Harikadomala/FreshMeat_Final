@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, redirect, url_for, request, flash, session
 from functools import wraps
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -5,7 +6,12 @@ from werkzeug.utils import secure_filename
 import os
 import mysql.connector
 from dotenv import load_dotenv
+
 load_dotenv()
+
+
+# ---------------- DATABASE CONNECTION ----------------
+
 def get_db_connection():
     return mysql.connector.connect(
         host=os.getenv("DB_HOST"),
@@ -16,13 +22,40 @@ def get_db_connection():
     )
 
 
+# ---------------- FLASK APPLICATION ----------------
 
+app = Flask(
+    __name__,
+    static_url_path="/rider/static",
+    static_folder="static"
+)
+
+app.secret_key = os.getenv("FRESHMEAT_SECRET_KEY")
+
+
+# ---------------- RIDER DOCUMENT STORAGE ----------------
+
+UPLOAD_FOLDER = "/tmp/rider_documents"
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
+
+ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
+
+
+def allowed_file(filename):
+    return (
+        "." in filename and
+        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+    )
+
+
+# ---------------- CREATE DATABASE TABLES ----------------
 
 def create_tables():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Riders table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS riders (
             rider_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -40,7 +73,6 @@ def create_tables():
         )
     """)
 
-    # Rider documents table
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS rider_documents (
             document_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -65,27 +97,8 @@ def create_tables():
     print("Riders and documents tables are ready!")
 
 
-# Create Flask application FIRST
-app = Flask(__name__)
-app.secret_key = os.getenv("FRESHMEAT_SECRET_KEY")
-
-# Rider document storage
-UPLOAD_FOLDER = "/tmp/rider_documents"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
-
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
-
-
-def allowed_file(filename):
-    return (
-        "." in filename and
-        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-    )
-
-
 # Test MySQL connection and create tables
+
 try:
     connection = get_db_connection()
     print("MySQL Connected Successfully!")
@@ -95,24 +108,6 @@ try:
 
 except mysql.connector.Error as err:
     print("MySQL Connection Failed:", err)
-
-
-
-# ---------------- RIDER DOCUMENT STORAGE ----------------
-
-UPLOAD_FOLDER = "/tmp/rider_documents"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-app.config["MAX_CONTENT_LENGTH"] = 20 * 1024 * 1024
-
-ALLOWED_EXTENSIONS = {"jpg", "jpeg", "png", "webp"}
-
-
-def allowed_file(filename):
-    return (
-        "." in filename and
-        filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-    )
 
 
 # ---------------- RIDER ACCOUNTS ----------------
@@ -148,7 +143,6 @@ orders = [
 
 
 # ---------------- HELPER FUNCTIONS ----------------
-
 
 def current_rider():
 
@@ -190,17 +184,25 @@ def current_rider():
         connection.close()
 
 
+# ---------------- LOGIN REQUIRED ----------------
 
 def login_required(func):
+
     @wraps(func)
     def wrapper(*args, **kwargs):
+
         if not session.get("rider_username"):
             return redirect(url_for("login"))
+
         return func(*args, **kwargs)
+
     return wrapper
 
 
+# ---------------- APPROVED RIDER REQUIRED ----------------
+
 def approved_required(func):
+
     @wraps(func)
     def wrapper(*args, **kwargs):
 
@@ -212,7 +214,6 @@ def approved_required(func):
         if rider["status"] != "Approved":
             return redirect(url_for("rider_status"))
 
-        # Do not allow dashboard access before verification
         if not rider.get("verification_submitted", False):
             return redirect(url_for("rider_verification"))
 
@@ -221,18 +222,24 @@ def approved_required(func):
     return wrapper
 
 
+# ---------------- ADMIN REQUIRED ----------------
+
 def admin_required(func):
+
     @wraps(func)
     def wrapper(*args, **kwargs):
+
         if not session.get("admin_logged_in"):
             return redirect(url_for("admin_login"))
+
         return func(*args, **kwargs)
+
     return wrapper
 
 
 # ---------------- HOME ----------------
 
-@app.route("/")
+@app.route("/rider/")
 def home():
 
     rider = current_rider()
@@ -249,7 +256,7 @@ def home():
 
 # ---------------- RIDER REGISTRATION ----------------
 
-@app.route("/register", methods=["GET", "POST"])
+@app.route("/rider/register", methods=["GET", "POST"])
 def register():
 
     if request.method == "POST":
@@ -263,7 +270,6 @@ def register():
         username = request.form.get("username", "").strip()
         password = request.form.get("password", "")
 
-        # Check empty fields
         if not all([
             name, phone, email, address,
             vehicle, license_number, username, password
@@ -271,7 +277,6 @@ def register():
             flash("Please fill all fields.", "error")
             return redirect(url_for("register"))
 
-        # Validate phone number
         if len(phone) != 10 or not phone.isdigit():
             flash("Enter a valid 10-digit phone number.", "error")
             return redirect(url_for("register"))
@@ -280,43 +285,43 @@ def register():
         cursor = connection.cursor()
 
         try:
-            # Check duplicate phone
+
             cursor.execute(
                 "SELECT rider_id FROM riders WHERE phone = %s",
                 (phone,)
             )
+
             if cursor.fetchone():
                 flash("Phone number already registered!", "error")
                 return redirect(url_for("register"))
 
-            # Check duplicate email
             cursor.execute(
                 "SELECT rider_id FROM riders WHERE email = %s",
                 (email,)
             )
+
             if cursor.fetchone():
                 flash("Email address already registered!", "error")
                 return redirect(url_for("register"))
 
-            # Check duplicate username
             cursor.execute(
                 "SELECT rider_id FROM riders WHERE username = %s",
                 (username,)
             )
+
             if cursor.fetchone():
                 flash("Username already taken!", "error")
                 return redirect(url_for("register"))
 
-            # Check duplicate driving licence
             cursor.execute(
                 "SELECT rider_id FROM riders WHERE licence_number = %s",
                 (license_number,)
             )
+
             if cursor.fetchone():
                 flash("Driving licence already registered!", "error")
                 return redirect(url_for("register"))
 
-            # Insert rider into MySQL
             password_hash = generate_password_hash(password)
 
             cursor.execute("""
@@ -338,8 +343,10 @@ def register():
             return redirect(url_for("login"))
 
         except mysql.connector.Error as err:
+
             connection.rollback()
             print("Registration database error:", err)
+
             flash("Something went wrong during registration.", "error")
             return redirect(url_for("register"))
 
@@ -348,7 +355,6 @@ def register():
             connection.close()
 
     return render_template("register.html")
-
 
 
 # ---------------- RIDER LOGIN ----------------
@@ -365,7 +371,7 @@ def login():
         cursor = connection.cursor(dictionary=True)
 
         try:
-            # Find rider in MySQL
+
             cursor.execute(
                 "SELECT * FROM riders WHERE username = %s",
                 (username,)
@@ -379,16 +385,15 @@ def login():
 
                 flash("Login successful!", "success")
 
-                # First login: go to camera verification
                 if not rider["verification_submitted"]:
                     return redirect(url_for("rider_verification"))
 
-                # Already verified: go to dashboard
                 return redirect(url_for("rider_dashboard"))
 
             flash("Invalid username or password.", "error")
 
         except mysql.connector.Error as err:
+
             print("Login database error:", err)
             flash("Something went wrong. Please try again.", "error")
 
@@ -399,12 +404,9 @@ def login():
     return render_template("login.html")
 
 
-
-
 # ---------------- RIDER VERIFICATION ----------------
 
-
-@app.route("/rider-verification", methods=["GET", "POST"])
+@app.route("/rider/rider-verification", methods=["GET", "POST"])
 @login_required
 def rider_verification():
 
@@ -462,7 +464,6 @@ def rider_verification():
 
         try:
 
-            # Save document filenames in MySQL
             cursor.execute("""
                 INSERT INTO rider_documents (
                     rider_id,
@@ -491,7 +492,6 @@ def rider_verification():
                 saved_documents["vehicle_photo"]
             ))
 
-            # Update verification status in MySQL
             cursor.execute("""
                 UPDATE riders
                 SET verification_submitted = TRUE
@@ -522,17 +522,16 @@ def rider_verification():
 
 # ---------------- RIDER STATUS ----------------
 
-@app.route("/rider-status")
+@app.route("/rider/rider-status")
 @login_required
 def rider_status():
 
-    # Existing demo status behavior
     return redirect(url_for("rider_dashboard"))
 
 
 # ---------------- RIDER LOGOUT ----------------
 
-@app.route("/logout")
+@app.route("/rider/logout")
 def logout():
 
     session.pop("rider_username", None)
@@ -542,7 +541,7 @@ def logout():
 
 # ---------------- ADMIN LOGIN ----------------
 
-@app.route("/admin-login", methods=["GET", "POST"])
+@app.route("/rider/admin-login", methods=["GET", "POST"])
 def admin_login():
 
     if request.method == "POST":
@@ -563,7 +562,7 @@ def admin_login():
 
 # ---------------- ADMIN LOGOUT ----------------
 
-@app.route("/admin-logout")
+@app.route("/rider/admin-logout")
 def admin_logout():
 
     session.pop("admin_logged_in", None)
@@ -573,7 +572,7 @@ def admin_logout():
 
 # ---------------- ADMIN DASHBOARD ----------------
 
-@app.route("/admin")
+@app.route("/rider/admin")
 @admin_required
 def admin_dashboard():
 
@@ -594,7 +593,7 @@ def admin_dashboard():
 
 # ---------------- APPROVE RIDER ----------------
 
-@app.route("/admin/approve/<int:rider_id>", methods=["POST"])
+@app.route("/rider/admin/approve/<int:rider_id>", methods=["POST"])
 @admin_required
 def approve_rider(rider_id):
 
@@ -616,7 +615,7 @@ def approve_rider(rider_id):
 
 # ---------------- REJECT RIDER ----------------
 
-@app.route("/admin/reject/<int:rider_id>", methods=["POST"])
+@app.route("/rider/admin/reject/<int:rider_id>", methods=["POST"])
 @admin_required
 def reject_rider(rider_id):
 
@@ -714,7 +713,7 @@ def rider_dashboard():
 
 # ---------------- ACCEPT ORDER ----------------
 
-@app.route("/accept/<int:order_id>", methods=["POST"])
+@app.route("/rider/accept/<int:order_id>", methods=["POST"])
 @approved_required
 def accept_order(order_id):
 
@@ -739,7 +738,7 @@ def accept_order(order_id):
 
 # ---------------- REJECT ORDER ----------------
 
-@app.route("/reject/<int:order_id>", methods=["POST"])
+@app.route("/rider/reject/<int:order_id>", methods=["POST"])
 @approved_required
 def reject_order(order_id):
 
@@ -767,7 +766,7 @@ def reject_order(order_id):
 
 # ---------------- DELIVER ORDER ----------------
 
-@app.route("/deliver/<int:order_id>", methods=["POST"])
+@app.route("/rider/deliver/<int:order_id>", methods=["POST"])
 @approved_required
 def deliver_order(order_id):
 
@@ -792,7 +791,7 @@ def deliver_order(order_id):
 
 # ---------------- ASSIGNED ORDERS ----------------
 
-@app.route("/assigned-orders")
+@app.route("/rider/assigned-orders")
 @approved_required
 def assigned_orders():
 
@@ -812,7 +811,7 @@ def assigned_orders():
 
 # ---------------- DELIVERY ANALYTICS ----------------
 
-@app.route("/delivery-analytics")
+@app.route("/rider/delivery-analytics")
 @approved_required
 def delivery_analytics():
 
@@ -870,7 +869,7 @@ def delivery_analytics():
 
 # ---------------- RIDER PROFILE ----------------
 
-@app.route("/rider-profile", methods=["GET", "POST"])
+@app.route("/rider/rider-profile", methods=["GET", "POST"])
 @approved_required
 def rider_profile():
 
@@ -891,7 +890,7 @@ def rider_profile():
 
 # ---------------- ORDER HISTORY ----------------
 
-@app.route("/order-history")
+@app.route("/rider/order-history")
 @approved_required
 def order_history():
 
@@ -911,7 +910,7 @@ def order_history():
 
 # ---------------- RIDER NOTIFICATIONS ----------------
 
-@app.route("/rider-notifications")
+@app.route("/rider/rider-notifications")
 @approved_required
 def rider_notifications():
 
