@@ -1,0 +1,22 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "services": {
+    "admin_portal": {
+      "root": "Admin_Portal",
+      "framework": "flask"
+    },
+    "customer_portal": {
+      "root": "Customer_Portal",
+      "framework": "flask"
+    },
+    "rider_portal": {
+      "root": "Rider_Portal",
+      "framework": "flask"
+    },
+    "seller_portal": {
+      "root": "Seller_Portal",
+      "framework": "flask"
+    }
+  },
+  "rewrites": []
+}
