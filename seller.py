@@ -310,6 +310,7 @@ def home():
     return send_from_directory(FRONTEND_FOLDER, "index.html")
 
 @app.route("/<path:filename>")
+@app.route("/seller/<path:filename>")
 def frontend_files(filename):
     return send_from_directory(FRONTEND_FOLDER, filename)
 
