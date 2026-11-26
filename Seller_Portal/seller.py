@@ -1288,6 +1288,7 @@ def update_rider_status(assignment_id):
 
         valid_next = {
             "Assigned": ["Picked Up"],
+            "Accepted": ["Picked Up"],
             "Picked Up": ["On the Way"],
             "On the Way": ["Delivered"],
             "Delivered": []
