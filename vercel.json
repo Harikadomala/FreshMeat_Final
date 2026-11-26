@@ -90,6 +90,16 @@
         "path": "/customers/$1"
       }
     },
+    
+   {
+     "source": "/review/(.*)",
+     "destination": {
+    "service": "admin_portal",
+    "path": "/review/$1"
+   }
+  },
+
+    
     {
       "source": "/rider",
       "destination": {
