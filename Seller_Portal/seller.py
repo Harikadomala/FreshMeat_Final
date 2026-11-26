@@ -657,7 +657,7 @@ def seller_products():
         if quantity_unit not in ("kg", "grams"):
             raise ValueError("Select kg or grams.")
 
-        image = save_product_image(request.files.get("image"))
+        image = ""
 
         cursor.execute("""
             INSERT INTO products (
