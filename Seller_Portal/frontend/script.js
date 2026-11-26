@@ -2375,7 +2375,8 @@ async function assignRiderToOrder(orderId) {
         const riderOptions = riders.map(rider =>
             `${rider.id}: ${rider.name} (${rider.phone})`
         ).join("\n");
-
+            
+   
         const selectedId = prompt(
             "Enter Rider ID from the available list:\n\n" + riderOptions
         );
