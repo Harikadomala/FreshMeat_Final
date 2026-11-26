@@ -231,8 +231,20 @@ def setup_database():
 
 
 # ---------------- COMMON HELPERS ----------------
+# ---------------- COMMON HELPERS ----------------
+
 def get_seller_id():
     return session.get("seller_id")
+
+
+def request_value(key, default=""):
+    if request.is_json:
+        data = request.get_json(silent=True) or {}
+        return data.get(key, default)
+
+    return request.form.get(key, default)
+
+
 def seller_required(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
@@ -251,7 +263,6 @@ def seller_required(function):
                 "SELECT id, status FROM sellers WHERE id = %s",
                 (seller_id,)
             )
-
             seller = cursor.fetchone()
 
         finally:
@@ -264,7 +275,7 @@ def seller_required(function):
                 "error": "Seller account not found."
             }), 403
 
-        if str(seller.get("status", "")).strip().lower() not in ("active", "approved"): 
+        if str(seller.get("status", "")).strip().lower() not in ("active", "approved"):
             session.clear()
             return jsonify({
                 "error": "Your account is waiting for Admin approval."
