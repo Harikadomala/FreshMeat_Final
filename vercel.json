@@ -24,7 +24,7 @@
       "source": "/admin/static/(.*)",
       "destination": {
         "service": "admin_portal",
-        "path": "admin/static/$1"
+        "path": "/admin/static/$1"
       }
     },
     {
@@ -41,11 +41,32 @@
         "path": "/admin/$1"
       }
     },
-        {
+    {
       "source": "/manage/(.*)",
       "destination": {
         "service": "admin_portal",
         "path": "/manage/$1"
+      }
+    },
+    {
+      "source": "/reports",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/reports"
+      }
+    },
+    {
+      "source": "/notifications",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/notifications"
+      }
+    },
+    {
+      "source": "/settings",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/settings"
       }
     },
     {
