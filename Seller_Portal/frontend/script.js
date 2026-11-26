@@ -2360,11 +2360,14 @@ async function acceptCustomerOrder(orderId) {
 
 
 // Assign Rider to Order
+
 async function assignRiderToOrder(orderId) {
     try {
         const data = await apiRequest(API.riders);
-        const riders = data.riders || [];
-        
+
+        const riders = (data.riders || []).filter(
+            rider => rider.availability === "Available"
+        );
 
         if (riders.length === 0) {
             alert("No available riders. Please add a rider first.");
@@ -2374,8 +2377,7 @@ async function assignRiderToOrder(orderId) {
         const riderOptions = riders.map(rider =>
             `${rider.id}: ${rider.rider_name} (${rider.phone})`
         ).join("\n");
-   
-   
+
         const selectedId = prompt(
             "Enter Rider ID from the available list:\n\n" + riderOptions
         );
@@ -2401,6 +2403,7 @@ async function assignRiderToOrder(orderId) {
         });
 
         alert("Rider assigned successfully!");
+
         await loadRiderAssignments();
         await loadRiders();
         await loadOrders();
@@ -2409,6 +2412,7 @@ async function assignRiderToOrder(orderId) {
         alert(error.message);
     }
 }
+
 
 
 // Update Delivery Status
