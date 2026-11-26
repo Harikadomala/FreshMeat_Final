@@ -2363,9 +2363,8 @@ async function acceptCustomerOrder(orderId) {
 async function assignRiderToOrder(orderId) {
     try {
         const data = await apiRequest(API.riders);
-        const riders = (data.riders || []).filter(
-            rider => (rider.status || "Available") === "Available"
-        );
+        const riders = data.riders || [];
+        
 
         if (riders.length === 0) {
             alert("No available riders. Please add a rider first.");
