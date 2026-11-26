@@ -707,28 +707,51 @@ def reject_rider(rider_id):
 
 # ---------------- RIDER DASHBOARD ----------------
 
+
+# ---------------- RIDER DASHBOARD ----------------
+
 @app.route("/rider")
 @approved_required
 def rider_dashboard():
 
     rider = current_rider()
 
+    # Fetch real orders assigned to this rider from MySQL
+    all_orders = get_rider_database_orders(rider["id"]) if rider else []
+
+    # Orders that are not yet completed or rejected
     assigned_orders = [
-        o for o in orders
-        if o["rider_status"] in ["Pending", "Accepted"]
+        o for o in all_orders
+        if o["rider_status"] in [
+            "Pending", "Accepted", "Picked Up", "On the Way"
+        ]
     ]
 
+    # Completed delivery history
     delivery_history = [
-        o for o in orders
+        o for o in all_orders
         if o["rider_status"] == "Delivered"
     ]
 
-    total_assigned = len(orders)
+    total_assigned = len(all_orders)
 
-    pending_count = sum(o["rider_status"] == "Pending" for o in orders)
-    accepted_count = sum(o["rider_status"] == "Accepted" for o in orders)
-    delivered_count = sum(o["rider_status"] == "Delivered" for o in orders)
-    rejected_count = sum(o["rider_status"] == "Rejected" for o in orders)
+    pending_count = sum(
+        o["rider_status"] == "Pending" for o in all_orders
+    )
+
+    # Include Picked Up and On the Way in the accepted/in-progress count
+    accepted_count = sum(
+        o["rider_status"] in ["Accepted", "Picked Up", "On the Way"]
+        for o in all_orders
+    )
+
+    delivered_count = sum(
+        o["rider_status"] == "Delivered" for o in all_orders
+    )
+
+    rejected_count = sum(
+        o["rider_status"] == "Rejected" for o in all_orders
+    )
 
     success_rate = round(
         (delivered_count / total_assigned) * 100, 1
@@ -744,17 +767,19 @@ def rider_dashboard():
         ]
     }
 
-    total_order_value = sum(o["amount"] for o in orders)
+    total_order_value = sum(
+        (o["amount"] or 0) for o in all_orders
+    )
 
     delivered_value = sum(
-        o["amount"] for o in orders
+        (o["amount"] or 0) for o in all_orders
         if o["rider_status"] == "Delivered"
     )
 
     food_summary = {}
 
-    for order in orders:
-        item = order["item"]
+    for order in all_orders:
+        item = order.get("item") or "Products"
         food_summary[item] = food_summary.get(item, 0) + 1
 
     food_chart = {
