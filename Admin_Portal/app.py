@@ -21,6 +21,7 @@ app = Flask(
     static_folder="static"
 )
 app.secret_key = "freshmeet_admin_secret_key"
+app.config["SESSION_COOKIE_NAME"] = "admin_session"
 
 app.config["UPLOAD_FOLDER"] = "/tmp/admin_uploads"
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
