@@ -70,6 +70,27 @@
       }
     },
     {
+      "source": "/sellers/(.*)",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/sellers/$1"
+      }
+    },
+    {
+      "source": "/riders/(.*)",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/riders/$1"
+      }
+    },
+    {
+      "source": "/customers/(.*)",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/customers/$1"
+      }
+    },
+    {
       "source": "/rider",
       "destination": {
         "service": "rider_portal",
