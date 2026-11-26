@@ -511,6 +511,9 @@ def rider_verification():
 
     if rider.get("verification_submitted", False):
         return redirect(url_for("rider_dashboard"))
+        
+    if request.method == "GET":
+    return render_template("verification.html")
 
 
 
