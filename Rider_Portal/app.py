@@ -184,6 +184,65 @@ def current_rider():
         connection.close()
 
 
+def get_rider_database_orders(rider_id):
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute("""
+            SELECT
+                ra.id AS assignment_id,
+                ra.order_id AS id,
+                o.customer_name AS customer,
+                o.customer_phone AS phone,
+                o.customer_address AS address,
+                o.total_amount AS amount,
+
+                (
+                    SELECT GROUP_CONCAT(
+                        CONCAT(p.name, ' x ', oi.quantity)
+                        SEPARATOR ', '
+                    )
+                    FROM order_items oi
+                    JOIN products p ON p.id = oi.product_id
+                    WHERE oi.order_id = ra.order_id
+                    AND oi.seller_id = ra.seller_id
+                ) AS item,
+
+                CASE
+                    WHEN ra.delivery_status = 'Assigned'
+                    THEN 'Pending'
+                    ELSE ra.delivery_status
+                END AS rider_status,
+
+                ra.delivery_status,
+                ra.rejection_reason,
+                o.order_status AS seller_status
+
+            FROM riders r
+
+            JOIN seller_riders sr
+                ON sr.source_rider_id = r.rider_id
+
+            JOIN rider_assignments ra
+                ON ra.rider_id = sr.id
+
+            JOIN orders o
+                ON o.id = ra.order_id
+
+            WHERE r.rider_id = %s
+
+            ORDER BY ra.assigned_at DESC
+        """, (rider_id,))
+
+        return cursor.fetchall()
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
 # ---------------- LOGIN REQUIRED ----------------
 
 def login_required(func):
