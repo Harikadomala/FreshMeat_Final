@@ -299,6 +299,8 @@ def admin_required(func):
 
 # ---------------- HOME ----------------
 
+# ---------------- HOME ----------------
+
 @app.route("/rider/")
 def home():
 
@@ -306,12 +308,17 @@ def home():
 
     if rider:
 
+        if rider["status"] != "Approved":
+            return redirect(url_for("rider_status"))
+
         if not rider.get("verification_submitted", False):
             return redirect(url_for("rider_verification"))
 
         return redirect(url_for("rider_dashboard"))
 
     return redirect(url_for("login"))
+
+
 
 
 # ---------------- RIDER REGISTRATION ----------------
