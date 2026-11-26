@@ -2318,9 +2318,9 @@ async function loadRiderAssignments() {
             <tr>
                 <td>#${escapeHTML(item.order_id)}</td>
                 <td>${escapeHTML(item.rider_name)}</td>
-                <td>${escapeHTML(item.rider_phone)}</td>
+                <td>${escapeHTML(item.phone)}</td>
                 <td>${escapeHTML(item.vehicle_number || "-")}</td>
-                <td>${escapeHTML(item.status)}</td>
+                <td>${escapeHTML(item.delivery_status)}</td>
                 <td>
                     <select onchange="changeRiderStatus(${item.id}, this.value)">
                         <option value="">Update Status</option>
@@ -2372,9 +2372,9 @@ async function assignRiderToOrder(orderId) {
         }
 
         const riderOptions = riders.map(rider =>
-            `${rider.id}: ${rider.name} (${rider.phone})`
+            `${rider.id}: ${rider.rider_name} (${rider.phone})`
         ).join("\n");
-            
+   
    
         const selectedId = prompt(
             "Enter Rider ID from the available list:\n\n" + riderOptions
