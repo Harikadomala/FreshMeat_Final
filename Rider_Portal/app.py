@@ -31,6 +31,7 @@ app = Flask(
 )
 
 app.secret_key = os.getenv("FRESHMEAT_SECRET_KEY")
+app.config["SESSION_COOKIE_NAME"] = "rider_session"
 
 
 # ---------------- RIDER DOCUMENT STORAGE ----------------
