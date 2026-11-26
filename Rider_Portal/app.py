@@ -24,13 +24,15 @@ def get_db_connection():
 
 # ---------------- FLASK APPLICATION ----------------
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
     static_url_path="/rider/static",
     static_folder="static"
 )
 
 app.secret_key = os.getenv("FRESHMEAT_SECRET_KEY")
 app.config["SESSION_COOKIE_NAME"] = "rider_session"
+
 
 
 # ---------------- RIDER DOCUMENT STORAGE ----------------
