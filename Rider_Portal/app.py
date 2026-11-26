@@ -405,7 +405,7 @@ def register():
             """, (
                 name, phone, email, address,
                 vehicle, license_number,
-                username, password_hash, "Approved"
+                username, password_hash, "Pending"
             ))
 
             connection.commit()
