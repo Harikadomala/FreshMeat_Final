@@ -808,15 +808,35 @@ def rider_dashboard():
 
 # ---------------- ACCEPT ORDER ----------------
 
+
 @app.route("/rider/accept/<int:order_id>", methods=["POST"])
 @approved_required
 def accept_order(order_id):
 
-    for order in orders:
+    rider = current_rider()
 
-        if order["id"] == order_id and order["rider_status"] == "Pending":
+    if not rider:
+        flash("Please log in first.", "warning")
+        return redirect(url_for("rider_login"))
 
-            order["rider_status"] = "Accepted"
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        connection.start_transaction()
+
+        cursor.execute("""
+            UPDATE rider_assignments ra
+            JOIN seller_riders sr
+                ON sr.id = ra.rider_id
+            SET ra.delivery_status = 'Accepted'
+            WHERE ra.order_id = %s
+              AND sr.source_rider_id = %s
+              AND ra.delivery_status = 'Assigned'
+        """, (order_id, rider["id"]))
+
+        if cursor.rowcount > 0:
+            connection.commit()
 
             notifications.insert(0, {
                 "title": "Order Accepted",
@@ -826,9 +846,27 @@ def accept_order(order_id):
 
             flash("Order accepted successfully!", "success")
 
-            break
+        else:
+            connection.rollback()
+            flash(
+                "Order not found or it has already been processed.",
+                "warning"
+            )
+
+    except mysql.connector.Error as error:
+        connection.rollback()
+        print("Accept order error:", error)
+        flash("Unable to accept this order. Please try again.", "danger")
+
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect(url_for("assigned_orders"))
+
+
+
+# ---------------- REJECT ORDER ----------------
 
 
 # ---------------- REJECT ORDER ----------------
@@ -837,14 +875,57 @@ def accept_order(order_id):
 @approved_required
 def reject_order(order_id):
 
+    rider = current_rider()
+
+    if not rider:
+        flash("Please log in first.", "warning")
+        return redirect(url_for("rider_login"))
+
     reason = request.form.get("reason", "").strip()
+    reason = reason or "Not specified"
 
-    for order in orders:
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
-        if order["id"] == order_id and order["rider_status"] == "Pending":
+    try:
+        connection.start_transaction()
 
-            order["rider_status"] = "Rejected"
-            order["rejection_reason"] = reason or "Not specified"
+        cursor.execute("""
+            SELECT ra.id, ra.rider_id
+            FROM rider_assignments ra
+            JOIN seller_riders sr
+                ON sr.id = ra.rider_id
+            WHERE ra.order_id = %s
+              AND sr.source_rider_id = %s
+              AND ra.delivery_status IN ('Assigned', 'Accepted')
+            FOR UPDATE
+        """, (order_id, rider["id"]))
+
+        assignments = cursor.fetchall()
+
+        if not assignments:
+            connection.rollback()
+            flash(
+                "Order not found or it has already been processed.",
+                "warning"
+            )
+        else:
+            for assignment_id, seller_rider_id in assignments:
+
+                cursor.execute("""
+                    UPDATE rider_assignments
+                    SET delivery_status = 'Rejected',
+                        rejection_reason = %s
+                    WHERE id = %s
+                """, (reason, assignment_id))
+
+                cursor.execute("""
+                    UPDATE seller_riders
+                    SET availability = 'Available'
+                    WHERE id = %s
+                """, (seller_rider_id,))
+
+            connection.commit()
 
             notifications.insert(0, {
                 "title": "Order Rejected",
@@ -854,9 +935,20 @@ def reject_order(order_id):
 
             flash("Order rejected.", "warning")
 
-            break
+    except mysql.connector.Error as error:
+        connection.rollback()
+        print("Reject order error:", error)
+        flash("Unable to reject this order. Please try again.", "danger")
+
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect(url_for("rider_dashboard"))
+
+
+
+# ---------------- DELIVER ORDER ----------------
 
 
 # ---------------- DELIVER ORDER ----------------
@@ -865,11 +957,57 @@ def reject_order(order_id):
 @approved_required
 def deliver_order(order_id):
 
-    for order in orders:
+    rider = current_rider()
 
-        if order["id"] == order_id and order["rider_status"] == "Accepted":
+    if not rider:
+        flash("Please log in first.", "warning")
+        return redirect(url_for("rider_login"))
 
-            order["rider_status"] = "Delivered"
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        connection.start_transaction()
+
+        cursor.execute("""
+            SELECT ra.id, ra.rider_id
+            FROM rider_assignments ra
+            JOIN seller_riders sr
+                ON sr.id = ra.rider_id
+            WHERE ra.order_id = %s
+              AND sr.source_rider_id = %s
+              AND ra.delivery_status IN (
+                  'Accepted', 'Picked Up', 'On the Way'
+              )
+            FOR UPDATE
+        """, (order_id, rider["id"]))
+
+        assignments = cursor.fetchall()
+
+        if not assignments:
+            connection.rollback()
+            flash(
+                "Order not found or it is not ready for delivery completion.",
+                "warning"
+            )
+
+        else:
+            for assignment_id, seller_rider_id in assignments:
+
+                cursor.execute("""
+                    UPDATE rider_assignments
+                    SET delivery_status = 'Delivered',
+                        delivered_at = NOW()
+                    WHERE id = %s
+                """, (assignment_id,))
+
+                cursor.execute("""
+                    UPDATE seller_riders
+                    SET availability = 'Available'
+                    WHERE id = %s
+                """, (seller_rider_id,))
+
+            connection.commit()
 
             notifications.insert(0, {
                 "title": "Delivery Completed",
@@ -877,11 +1015,25 @@ def deliver_order(order_id):
                 "date": "Just now"
             })
 
-            flash(f"Order #{order_id} delivered successfully!", "success")
+            flash(
+                f"Order #{order_id} delivered successfully!",
+                "success"
+            )
 
-            break
+    except mysql.connector.Error as error:
+        connection.rollback()
+        print("Deliver order error:", error)
+        flash(
+            "Unable to complete delivery. Please try again.",
+            "danger"
+        )
+
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect(url_for("rider_dashboard"))
+
 
 
 # ---------------- ASSIGNED ORDERS ----------------
@@ -892,9 +1044,14 @@ def assigned_orders():
 
     rider = current_rider()
 
+    # Fetch real assigned orders from MySQL
+    all_orders = get_rider_database_orders(rider["id"]) if rider else []
+
     assigned_orders_list = [
-        o for o in orders
-        if o["rider_status"] in ["Pending", "Accepted"]
+        o for o in all_orders
+        if o["rider_status"] in [
+            "Pending", "Accepted", "Picked Up", "On the Way"
+        ]
     ]
 
     return render_template(
@@ -902,6 +1059,8 @@ def assigned_orders():
         rider=rider,
         orders=assigned_orders_list
     )
+
+
 
 
 # ---------------- DELIVERY ANALYTICS ----------------
