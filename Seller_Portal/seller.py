@@ -22,7 +22,6 @@ UPLOAD_FOLDER = "/tmp/seller_uploads"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
-app.secret_key = os.environ["FRESHMEET_SECRET_KEY"]
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 app.config["SESSION_COOKIE_HTTPONLY"] = True
