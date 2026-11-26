@@ -19,6 +19,7 @@ print("MAIL PASSWORD:", bool(os.getenv("MAIL_PASSWORD")))
 
 app = Flask(__name__)
 app.secret_key = 'premium_fresh_meat_secret_key_2026'
+app.config["SESSION_COOKIE_NAME"] = "customer_session"
 # MySQL connection settings are read from environment variables.
 # Create the database once in MySQL: CREATE DATABASE premium_meat_store;
 class HybridRow(dict):
