@@ -229,6 +229,7 @@ def setup_database():
     connection.close()
 
 
+
 # ---------------- COMMON HELPERS ----------------
 
 def seller_required(function):
@@ -244,15 +245,17 @@ def seller_required(function):
         connection = get_db()
         cursor = connection.cursor(dictionary=True)
 
-        cursor.execute(
-            "SELECT id, status FROM sellers WHERE id = %s",
-            (seller_id,)
-        )
+        try:
+            cursor.execute(
+                "SELECT id, status FROM sellers WHERE id = %s",
+                (seller_id,)
+            )
 
-        seller = cursor.fetchone()
+            seller = cursor.fetchone()
 
-        cursor.close()
-        connection.close()
+        finally:
+            cursor.close()
+            connection.close()
 
         if not seller:
             session.clear()
@@ -260,46 +263,15 @@ def seller_required(function):
                 "error": "Seller account not found."
             }), 403
 
+        if str(seller.get("status", "")).strip().lower() != "active":
+            session.clear()
+            return jsonify({
+                "error": "Your account is waiting for Admin approval."
+            }), 403
+
         return function(*args, **kwargs)
 
     return wrapper
-
-
-def get_seller_id():
-    return session.get("seller_id")
-
-
-def allowed_file(filename):
-    return (
-        "." in filename
-        and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
-    )
-
-
-def save_product_image(file):
-    if not file or not file.filename:
-        return ""
-
-    if not allowed_file(file.filename):
-        raise ValueError(
-            "Only PNG, JPG, JPEG and WEBP images are allowed."
-        )
-
-    filename = secure_filename(file.filename)
-    unique_name = secrets.token_hex(8) + "_" + filename
-
-    file.save(os.path.join(UPLOAD_FOLDER, unique_name))
-
-    return "/uploads/" + unique_name
-
-
-def request_value(name, default=""):
-    if request.is_json:
-        data = request.get_json(silent=True) or {}
-        return data.get(name, default)
-
-    return request.form.get(name, default)
-
 
 # ---------------- FRONTEND ----------------
 
@@ -426,6 +398,12 @@ def seller_login():
             return jsonify({
                 "error": "Invalid email or password."
             }), 401
+        if str(seller.get("status", "")).strip().lower() != "active":
+            return jsonify({
+                "error": "Your account is waiting for Admin approval."
+            }), 403
+    
+        
 
         session.clear()
         session["seller_id"] = seller["id"]
