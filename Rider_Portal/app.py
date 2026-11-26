@@ -602,10 +602,10 @@ def rider_status():
     if not rider:
         return redirect(url_for("login"))
 
-    return render_template(
-        "rider_status.html",
-        rider=rider
-    )
+    if rider["status"] == "Rejected":
+        return render_template("rider_rejected.html", rider=rider)
+
+    return render_template("pending_approval.html", rider=rider)
 
 
 # ---------------- RIDER LOGOUT ----------------
