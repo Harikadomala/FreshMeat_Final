@@ -1058,6 +1058,7 @@ async function deleteProduct(productId) {
 // ORDERS
 // ======================================================
 
+
 async function loadOrders() {
 
     const container =
@@ -1065,10 +1066,22 @@ async function loadOrders() {
 
     try {
 
-        const data = await apiRequest(API.orders);
+        // Fetch orders and rider assignments together
+        const [data, assignmentData] = await Promise.all([
+            apiRequest(API.orders),
+            apiRequest(API.assignments)
+        ]);
 
         const orders = data.orders || [];
+        const assignments = assignmentData.assignments || [];
 
+        // Create a lookup using Order ID
+        const assignedByOrder = new Map(
+            assignments.map(item => [
+                Number(item.order_id),
+                item
+            ])
+        );
 
         if (orders.length === 0) {
 
@@ -1079,43 +1092,65 @@ async function loadOrders() {
 
         }
 
+        container.innerHTML = orders.map(order => {
 
-        container.innerHTML = orders.map(order => `
+            const assignment =
+                assignedByOrder.get(Number(order.id));
 
-            <tr>
+            let actionHTML = "";
 
-                <td>#${escapeHTML(order.id)}</td>
+            if (order.seller_status !== "Accepted") {
 
-                <td>${escapeHTML(order.customer_name)}</td>
+                actionHTML = `
+                    <button class="primary-btn"
+                            onclick="acceptCustomerOrder(${order.id})">
+                        Accept Order
+                    </button>
+                `;
 
-                <td>${escapeHTML(order.customer_phone)}</td>
+            } else if (assignment) {
 
-                <td>${escapeHTML(order.items_summary || "")}</td>
+                actionHTML = `
+                    <span>
+                        Driver Assigned: ${escapeHTML(assignment.rider_name)}
+                    </span>
+                `;
 
-                <td>₹${Number(order.total_amount).toFixed(2)}</td>
+            } else {
 
-                <td>
-    ${escapeHTML(order.seller_status || order.order_status || order.status)}
+                actionHTML = `
+                    <button class="primary-btn"
+                            onclick="assignRiderToOrder(${order.id})">
+                        Assign Rider
+                    </button>
+                `;
 
-    ${order.seller_status !== "Accepted" ? `
-        <button class="primary-btn"
-                onclick="acceptCustomerOrder(${order.id})">
-            Accept Order
-        </button>
-    ` : `
-        <button class="primary-btn"
-                onclick="assignRiderToOrder(${order.id})">
-            Assign Rider
-        </button>
-    `}
-</td>
+            }
 
-                <td>${escapeHTML(order.created_at)}</td>
+            return `
+                <tr>
 
-            </tr>
+                    <td>#${escapeHTML(order.id)}</td>
 
-        `).join("");
+                    <td>${escapeHTML(order.customer_name)}</td>
 
+                    <td>${escapeHTML(order.customer_phone)}</td>
+
+                    <td>${escapeHTML(order.items_summary || "")}</td>
+
+                    <td>₹${Number(order.total_amount).toFixed(2)}</td>
+
+                    <td>
+                        ${escapeHTML(order.seller_status || order.order_status || order.status)}
+                        ${actionHTML}
+                    </td>
+
+                    <td>${escapeHTML(order.created_at)}</td>
+
+                </tr>
+            `;
+
+        }).join("");
 
     } catch (error) {
 
@@ -1130,6 +1165,7 @@ async function loadOrders() {
     }
 
 }
+
 
 
 // ======================================================
