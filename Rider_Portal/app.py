@@ -25,7 +25,7 @@ def get_db_connection():
 # ---------------- FLASK APPLICATION ----------------
 
 app = Flask(
-    __name__,
+    __name__)
     static_url_path="/rider/static",
     static_folder="static"
 )
