@@ -25,6 +25,7 @@ app.secret_key = (
     os.environ.get("FRESHMEET_SECRET_KEY")
     or secrets.token_hex(32)
 )
+app.config["SESSION_COOKIE_NAME"] = "seller_session"
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
 app.config["SESSION_COOKIE_HTTPONLY"] = True
