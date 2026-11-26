@@ -951,8 +951,6 @@ def reject_order(order_id):
 # ---------------- DELIVER ORDER ----------------
 
 
-# ---------------- DELIVER ORDER ----------------
-
 @app.route("/rider/deliver/<int:order_id>", methods=["POST"])
 @approved_required
 def deliver_order(order_id):
@@ -1006,6 +1004,25 @@ def deliver_order(order_id):
                     SET availability = 'Available'
                     WHERE id = %s
                 """, (seller_rider_id,))
+                            # Check whether all riders assigned to this order have delivered
+            cursor.execute("""
+                SELECT COUNT(*)
+                FROM rider_assignments
+                WHERE order_id = %s
+                  AND delivery_status <> 'Delivered'
+            """, (order_id,))
+
+            remaining_assignments = cursor.fetchone()[0]
+
+            # Update the main order status only after all assignments are delivered
+            if remaining_assignments == 0:
+                cursor.execute("""
+                    UPDATE orders
+                    SET order_status = 'Delivered'
+                    WHERE id = %s
+                """, (order_id,))
+                
+                
 
             connection.commit()
 
