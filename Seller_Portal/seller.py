@@ -263,7 +263,7 @@ def seller_required(function):
                 "error": "Seller account not found."
             }), 403
 
-        if str(seller.get("status", "")).strip().lower() != "active":
+        if str(seller.get("status", "")).strip().lower() not in ("active", "approved"): 
             session.clear()
             return jsonify({
                 "error": "Your account is waiting for Admin approval."
@@ -398,7 +398,7 @@ def seller_login():
             return jsonify({
                 "error": "Invalid email or password."
             }), 401
-        if str(seller.get("status", "")).strip().lower() != "active":
+        if str(seller.get("status", "")).strip().lower() not in ("active", "approved"):
             return jsonify({
                 "error": "Your account is waiting for Admin approval."
             }), 403
