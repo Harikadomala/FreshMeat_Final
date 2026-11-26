@@ -2340,12 +2340,13 @@ async function loadRiderAssignments() {
 
 
 // Accept Customer Order
+
 async function acceptCustomerOrder(orderId) {
     if (!confirm("Do you want to accept this order?")) return;
 
     try {
         await apiRequest(`${API.orders}/${orderId}/accept`, {
-            method: "PATCH"
+            method: "POST"
         });
 
         alert("Order accepted successfully!");
@@ -2355,6 +2356,7 @@ async function acceptCustomerOrder(orderId) {
         alert(error.message);
     }
 }
+
 
 
 // Assign Rider to Order
