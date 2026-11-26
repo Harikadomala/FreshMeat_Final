@@ -504,6 +504,8 @@ def rider_verification():
     if not rider:
         session.pop("rider_username", None)
         return redirect(url_for("login"))
+    if rider["status"] != "Approved":
+    return redirect(url_for("rider_status"))
 
     if rider.get("verification_submitted", False):
         return redirect(url_for("rider_dashboard"))
