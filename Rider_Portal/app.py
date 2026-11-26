@@ -597,7 +597,15 @@ def rider_verification():
 @login_required
 def rider_status():
 
-    return redirect(url_for("rider_dashboard"))
+    rider = current_rider()
+
+    if not rider:
+        return redirect(url_for("login"))
+
+    return render_template(
+        "rider_status.html",
+        rider=rider
+    )
 
 
 # ---------------- RIDER LOGOUT ----------------
