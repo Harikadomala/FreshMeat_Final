@@ -505,111 +505,13 @@ def rider_verification():
     if not rider:
         session.pop("rider_username", None)
         return redirect(url_for("login"))
+
     if rider["status"] != "Approved":
-    return redirect(url_for("rider_status"))
+        return redirect(url_for("rider_status"))
 
     if rider.get("verification_submitted", False):
         return redirect(url_for("rider_dashboard"))
 
-    if request.method == "POST":
-
-        document_fields = [
-            "rider_photo",
-            "license_front",
-            "license_back",
-            "rc_front",
-            "rc_back",
-            "vehicle_photo"
-        ]
-
-        saved_documents = {}
-
-        rider_folder = os.path.join(
-            UPLOAD_FOLDER,
-            str(rider["id"])
-        )
-
-        os.makedirs(rider_folder, exist_ok=True)
-
-        for field in document_fields:
-
-            file = request.files.get(field)
-
-            if not file or file.filename == "":
-                flash("Please capture all required photographs.", "error")
-                return redirect(url_for("rider_verification"))
-
-            if not allowed_file(file.filename):
-                flash("Only JPG, PNG and WEBP images are allowed.", "error")
-                return redirect(url_for("rider_verification"))
-
-            extension = file.filename.rsplit(".", 1)[1].lower()
-            filename = secure_filename(f"{field}.{extension}")
-
-            file_path = os.path.join(rider_folder, filename)
-            file.save(file_path)
-
-            saved_documents[field] = filename
-
-        connection = get_db_connection()
-        cursor = connection.cursor()
-
-        try:
-
-            cursor.execute("""
-                INSERT INTO rider_documents (
-                    rider_id,
-                    rider_photo,
-                    license_front,
-                    license_back,
-                    rc_front,
-                    rc_back,
-                    vehicle_photo
-                )
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                ON DUPLICATE KEY UPDATE
-                    rider_photo = VALUES(rider_photo),
-                    license_front = VALUES(license_front),
-                    license_back = VALUES(license_back),
-                    rc_front = VALUES(rc_front),
-                    rc_back = VALUES(rc_back),
-                    vehicle_photo = VALUES(vehicle_photo)
-            """, (
-                rider["id"],
-                saved_documents["rider_photo"],
-                saved_documents["license_front"],
-                saved_documents["license_back"],
-                saved_documents["rc_front"],
-                saved_documents["rc_back"],
-                saved_documents["vehicle_photo"]
-            ))
-
-            cursor.execute("""
-                UPDATE riders
-                SET verification_submitted = TRUE
-                WHERE rider_id = %s
-            """, (rider["id"],))
-
-            connection.commit()
-
-            flash("Documents submitted successfully!", "success")
-
-            return redirect(url_for("rider_dashboard"))
-
-        except mysql.connector.Error as err:
-
-            connection.rollback()
-            print("Document verification database error:", err)
-
-            flash("Unable to save documents. Please try again.", "error")
-
-            return redirect(url_for("rider_verification"))
-
-        finally:
-            cursor.close()
-            connection.close()
-
-    return render_template("verification.html", rider=rider)
 
 
 # ---------------- RIDER STATUS ----------------
