@@ -231,7 +231,8 @@ def setup_database():
 
 
 # ---------------- COMMON HELPERS ----------------
-
+def get_seller_id():
+    return session.get("seller_id")
 def seller_required(function):
     @wraps(function)
     def wrapper(*args, **kwargs):
