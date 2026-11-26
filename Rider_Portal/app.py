@@ -592,7 +592,6 @@ def rider_verification():
 
 
 # ---------------- RIDER STATUS ----------------
-
 @app.route("/rider/rider-status")
 @login_required
 def rider_status():
@@ -605,7 +604,13 @@ def rider_status():
     if rider["status"] == "Rejected":
         return render_template("rider_rejected.html", rider=rider)
 
-    return render_template("pending_approval.html", rider=rider)
+    if rider["status"] != "Approved":
+        return render_template("pending_approval.html", rider=rider)
+
+    if not rider.get("verification_submitted", False):
+        return redirect(url_for("rider_verification"))
+
+    return redirect(url_for("rider_dashboard"))
 
 
 # ---------------- RIDER LOGOUT ----------------
