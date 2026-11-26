@@ -817,7 +817,7 @@ def accept_order(order_id):
 
     if not rider:
         flash("Please log in first.", "warning")
-        return redirect(url_for("rider_login"))
+        return redirect(url_for("login"))
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -879,7 +879,7 @@ def reject_order(order_id):
 
     if not rider:
         flash("Please log in first.", "warning")
-        return redirect(url_for("rider_login"))
+        return redirect(url_for("login"))
 
     reason = request.form.get("reason", "").strip()
     reason = reason or "Not specified"
@@ -961,7 +961,7 @@ def deliver_order(order_id):
 
     if not rider:
         flash("Please log in first.", "warning")
-        return redirect(url_for("rider_login"))
+        return redirect(url_for("login"))
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -1065,18 +1065,33 @@ def assigned_orders():
 
 # ---------------- DELIVERY ANALYTICS ----------------
 
+
 @app.route("/rider/delivery-analytics")
 @approved_required
 def delivery_analytics():
 
     rider = current_rider()
 
-    total_assigned = len(orders)
+    all_orders = get_rider_database_orders(rider["id"]) if rider else []
 
-    pending_count = sum(o["rider_status"] == "Pending" for o in orders)
-    accepted_count = sum(o["rider_status"] == "Accepted" for o in orders)
-    delivered_count = sum(o["rider_status"] == "Delivered" for o in orders)
-    rejected_count = sum(o["rider_status"] == "Rejected" for o in orders)
+    total_assigned = len(all_orders)
+
+    pending_count = sum(
+        o["rider_status"] == "Pending" for o in all_orders
+    )
+
+    accepted_count = sum(
+        o["rider_status"] in ["Accepted", "Picked Up", "On the Way"]
+        for o in all_orders
+    )
+
+    delivered_count = sum(
+        o["rider_status"] == "Delivered" for o in all_orders
+    )
+
+    rejected_count = sum(
+        o["rider_status"] == "Rejected" for o in all_orders
+    )
 
     success_rate = round(
         (delivered_count / total_assigned) * 100, 1
@@ -1092,17 +1107,19 @@ def delivery_analytics():
         ]
     }
 
-    total_order_value = sum(o["amount"] for o in orders)
+    total_order_value = sum(
+        (o["amount"] or 0) for o in all_orders
+    )
 
     delivered_value = sum(
-        o["amount"] for o in orders
+        (o["amount"] or 0) for o in all_orders
         if o["rider_status"] == "Delivered"
     )
 
     food_summary = {}
 
-    for order in orders:
-        item = order["item"]
+    for order in all_orders:
+        item = order.get("item") or "Products"
         food_summary[item] = food_summary.get(item, 0) + 1
 
     food_chart = {
@@ -1144,14 +1161,17 @@ def rider_profile():
 
 # ---------------- ORDER HISTORY ----------------
 
+
 @app.route("/rider/order-history")
 @approved_required
 def order_history():
 
     rider = current_rider()
 
+    all_orders = get_rider_database_orders(rider["id"]) if rider else []
+
     delivery_history = [
-        o for o in orders
+        o for o in all_orders
         if o["rider_status"] == "Delivered"
     ]
 
