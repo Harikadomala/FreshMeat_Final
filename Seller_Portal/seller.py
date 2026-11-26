@@ -70,7 +70,7 @@ def setup_database():
             state VARCHAR(100),
             pincode VARCHAR(20),
             address TEXT,
-            status VARCHAR(50) DEFAULT 'Active',
+            status VARCHAR(50) DEFAULT 'Pending',
             reason VARCHAR(500) DEFAULT '',
             aadhaar_file VARCHAR(500),
             pan_file VARCHAR(500),
@@ -328,7 +328,7 @@ def register_seller():
                 city, state, pincode, address, status, reason
             )
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s,
-                    %s, %s, %s, %s, 'Active', '')
+                    %s, %s, %s, %s, 'Pending', '')
         """, (
             data["name"].strip(),
             data["shop"].strip(),
@@ -347,7 +347,7 @@ def register_seller():
         connection.commit()
 
         return jsonify({
-            "message": "Registration successful. You can now log in to your seller portal."
+            "message": "Registration successful. Your account is waiting for Admin approval."
         }), 201
 
     except MySQLIntegrityError:
