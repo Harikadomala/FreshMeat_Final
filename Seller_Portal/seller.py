@@ -1100,6 +1100,110 @@ def assign_order_rider(order_id):
         connection.close()
 
 
+
+
+# ---------------- CREATE RIDER ASSIGNMENT ----------------
+
+@app.route("/api/seller/rider-assignments", methods=["POST"])
+@seller_required
+def assign_rider_to_order():
+    data = request.get_json(silent=True) or {}
+
+    try:
+        order_id = int(data.get("order_id"))
+        rider_id = int(data.get("rider_id"))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid order or rider ID."}), 400
+
+    seller_id = get_seller_id()
+
+    connection = get_db()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        connection.start_transaction()
+
+        # Check whether this order belongs to this seller
+        cursor.execute("""
+            SELECT id
+            FROM order_items
+            WHERE order_id = %s AND seller_id = %s
+            LIMIT 1
+        """, (order_id, seller_id))
+
+        order = cursor.fetchone()
+
+        if not order:
+            connection.rollback()
+            return jsonify({"error": "Order not found."}), 404
+
+        # Check whether the rider belongs to this seller
+        cursor.execute("""
+            SELECT id, availability
+            FROM seller_riders
+            WHERE id = %s AND seller_id = %s
+            FOR UPDATE
+        """, (rider_id, seller_id))
+
+        rider = cursor.fetchone()
+
+        if not rider:
+            connection.rollback()
+            return jsonify({"error": "Rider not found."}), 404
+
+        if rider["availability"] not in (None, "Available"):
+            connection.rollback()
+            return jsonify({
+                "error": "This rider is currently unavailable."
+            }), 409
+
+        # Prevent duplicate assignments for the same order
+        cursor.execute("""
+            SELECT id
+            FROM rider_assignments
+            WHERE order_id = %s AND seller_id = %s
+            LIMIT 1
+        """, (order_id, seller_id))
+
+        existing = cursor.fetchone()
+
+        if existing:
+            connection.rollback()
+            return jsonify({
+                "error": "A rider is already assigned to this order."
+            }), 409
+
+        # Create assignment
+        cursor.execute("""
+            INSERT INTO rider_assignments
+                (seller_id, order_id, rider_id, delivery_status)
+            VALUES (%s, %s, %s, 'Assigned')
+        """, (seller_id, order_id, rider_id))
+
+        # Mark rider unavailable while delivering
+        cursor.execute("""
+            UPDATE seller_riders
+            SET availability = 'Busy'
+            WHERE id = %s AND seller_id = %s
+        """, (rider_id, seller_id))
+
+        connection.commit()
+
+        return jsonify({
+            "message": "Rider assigned successfully."
+        }), 201
+
+    except MySQLError as error:
+        connection.rollback()
+        print("Assign rider error:", error)
+        return jsonify({
+            "error": "Unable to assign rider."
+        }), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
 # ---------------- RIDER ASSIGNMENTS ----------------
 
 @app.route("/api/seller/rider-assignments", methods=["GET"])
