@@ -41,6 +41,13 @@
         "path": "/admin/$1"
       }
     },
+        {
+      "source": "/manage/(.*)",
+      "destination": {
+        "service": "admin_portal",
+        "path": "/manage/$1"
+      }
+    },
     {
       "source": "/rider",
       "destination": {
