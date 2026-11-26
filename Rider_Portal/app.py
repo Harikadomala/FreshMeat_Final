@@ -430,6 +430,9 @@ def register():
 
 # ---------------- RIDER LOGIN ----------------
 
+
+# ---------------- RIDER LOGIN ----------------
+
 @app.route("/rider/login", methods=["GET", "POST"])
 def login():
 
@@ -456,6 +459,14 @@ def login():
 
                 flash("Login successful!", "success")
 
+                # Check Admin approval first
+                if rider["status"] == "Rejected":
+                    return redirect(url_for("rider_status"))
+
+                if rider["status"] != "Approved":
+                    return redirect(url_for("rider_status"))
+
+                # Only approved riders can continue to verification
                 if not rider["verification_submitted"]:
                     return redirect(url_for("rider_verification"))
 
@@ -719,7 +730,7 @@ def reject_rider(rider_id):
     return redirect(url_for("admin_dashboard"))
 
 
-# ---------------- RIDER DASHBOARD ----------------
+
 
 
 # ---------------- RIDER DASHBOARD ----------------
