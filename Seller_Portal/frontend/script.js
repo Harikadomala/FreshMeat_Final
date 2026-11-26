@@ -18,7 +18,7 @@ const API = {
     notifications: "/api/seller/notifications",
     password: "/api/seller/change-password",
     riders: "/api/seller/riders",
-assignments: "/api/seller/rider-assignments"
+    assignments: "/api/seller/rider-assignments"
 
 };
 
