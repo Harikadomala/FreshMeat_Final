@@ -244,14 +244,14 @@
 
             </div>
 
-            {% elif order.rider_status == "Accepted" %}
+            {% elif order.rider_status in ["Accepted", "Picked Up", "On the Way"] %}
 
             <div style="margin-top:20px">
 
-                <h4>Ready for delivery</h4>
-
+                <h4>Delivery in Progress</h4>
                 <p>
-                    Order accepted. Complete the delivery once it reaches the customer.
+                    Current Status: {{ order.rider_status }}.
+                    Complete the delivery once it reaches the customer.
                 </p>
 
                 <form method="POST"
