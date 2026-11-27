@@ -260,6 +260,7 @@ def login_required(func):
     return wrapper
 
 
+
 # ---------------- APPROVED RIDER REQUIRED ----------------
 
 def approved_required(func):
@@ -270,35 +271,17 @@ def approved_required(func):
         rider = current_rider()
 
         if not rider:
+            session.pop("rider_username", None)
             return redirect(url_for("login"))
 
         if rider["status"] != "Approved":
             return redirect(url_for("rider_status"))
 
-        if not rider.get("verification_submitted", False):
-            return redirect(url_for("rider_verification"))
-
         return func(*args, **kwargs)
 
     return wrapper
 
 
-# ---------------- ADMIN REQUIRED ----------------
-
-def admin_required(func):
-
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-
-        if not session.get("admin_logged_in"):
-            return redirect(url_for("admin_login"))
-
-        return func(*args, **kwargs)
-
-    return wrapper
-
-
-# ---------------- HOME ----------------
 
 # ---------------- HOME ----------------
 
@@ -312,12 +295,10 @@ def home():
         if rider["status"] != "Approved":
             return redirect(url_for("rider_status"))
 
-        if not rider.get("verification_submitted", False):
-            return redirect(url_for("rider_verification"))
-
         return redirect(url_for("rider_dashboard"))
 
     return redirect(url_for("login"))
+
 
 
 
@@ -436,8 +417,6 @@ def register():
     return render_template("register.html")
 
 
-# ---------------- RIDER LOGIN ----------------
-
 
 # ---------------- RIDER LOGIN ----------------
 
@@ -474,10 +453,7 @@ def login():
                 if rider["status"] != "Approved":
                     return redirect(url_for("rider_status"))
 
-                # Only approved riders can continue to verification
-                if not rider["verification_submitted"]:
-                    return redirect(url_for("rider_verification"))
-
+                # Approved riders go directly to dashboard
                 return redirect(url_for("rider_dashboard"))
 
             flash("Invalid username or password.", "error")
@@ -496,6 +472,8 @@ def login():
 
 # ---------------- RIDER VERIFICATION ----------------
 
+# ---------------- RIDER VERIFICATION ----------------
+
 @app.route("/rider/rider-verification", methods=["GET", "POST"])
 @login_required
 def rider_verification():
@@ -509,15 +487,16 @@ def rider_verification():
     if rider["status"] != "Approved":
         return redirect(url_for("rider_status"))
 
-    if rider.get("verification_submitted", False):
-        return redirect(url_for("rider_dashboard"))
+    return redirect(url_for("rider_dashboard"))
 
-    if request.method == "GET":
-        return render_template("verification.html")
+
 
 
 
 # ---------------- RIDER STATUS ----------------
+
+# ---------------- RIDER STATUS ----------------
+
 @app.route("/rider/rider-status")
 @login_required
 def rider_status():
@@ -525,6 +504,7 @@ def rider_status():
     rider = current_rider()
 
     if not rider:
+        session.pop("rider_username", None)
         return redirect(url_for("login"))
 
     if rider["status"] == "Rejected":
@@ -532,9 +512,6 @@ def rider_status():
 
     if rider["status"] != "Approved":
         return render_template("pending_approval.html", rider=rider)
-
-    if not rider.get("verification_submitted", False):
-        return redirect(url_for("rider_verification"))
 
     return redirect(url_for("rider_dashboard"))
 
@@ -582,23 +559,52 @@ def admin_logout():
 
 # ---------------- ADMIN DASHBOARD ----------------
 
+
+
+# ---------------- ADMIN DASHBOARD ----------------
+
 @app.route("/rider/admin")
 @admin_required
 def admin_dashboard():
 
-    all_riders = list(riders.values())
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
 
-    pending_riders = [
-        r for r in all_riders if r["status"] == "Pending"
-    ]
+    try:
+        cursor.execute("""
+            SELECT
+                rider_id AS id,
+                full_name AS name,
+                phone,
+                email,
+                address,
+                vehicle_number AS vehicle,
+                licence_number AS license,
+                username,
+                status
+            FROM riders
+            ORDER BY created_at DESC
+        """)
 
-    return render_template(
-        "admin_dashboard.html",
-        orders=orders,
-        rider=all_riders[0] if all_riders else {},
-        riders=all_riders,
-        pending_riders=pending_riders
-    )
+        all_riders = cursor.fetchall()
+
+        pending_riders = [
+            rider for rider in all_riders
+            if rider["status"] == "Pending"
+        ]
+
+        return render_template(
+            "admin_dashboard.html",
+            orders=orders,
+            rider=all_riders[0] if all_riders else {},
+            riders=all_riders,
+            pending_riders=pending_riders
+        )
+
+    finally:
+        cursor.close()
+        connection.close()
+
 
 
 # ---------------- APPROVE RIDER ----------------
@@ -607,20 +613,37 @@ def admin_dashboard():
 @admin_required
 def approve_rider(rider_id):
 
-    for rider in riders.values():
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
-        if rider["id"] == rider_id:
+    try:
+        cursor.execute("""
+            UPDATE riders
+            SET status = 'Approved'
+            WHERE rider_id = %s
+        """, (rider_id,))
 
-            rider["status"] = "Approved"
+        connection.commit()
 
-            flash(
-                f"{rider['name']} has been approved!",
-                "success"
-            )
+        if cursor.rowcount > 0:
+            flash("Rider approved successfully!", "success")
+        else:
+            flash("Rider not found.", "error")
 
-            break
+    except mysql.connector.Error as err:
+        connection.rollback()
+        print("Approve rider error:", err)
+        flash("Unable to approve rider.", "error")
+
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect(url_for("admin_dashboard"))
+
+
+
+# ---------------- REJECT RIDER ----------------
 
 
 # ---------------- REJECT RIDER ----------------
@@ -629,18 +652,31 @@ def approve_rider(rider_id):
 @admin_required
 def reject_rider(rider_id):
 
-    for rider in riders.values():
+    connection = get_db_connection()
+    cursor = connection.cursor()
 
-        if rider["id"] == rider_id:
+    try:
+        cursor.execute("""
+            UPDATE riders
+            SET status = 'Rejected'
+            WHERE rider_id = %s
+        """, (rider_id,))
 
-            rider["status"] = "Rejected"
+        connection.commit()
 
-            flash(
-                f"{rider['name']} has been rejected.",
-                "warning"
-            )
+        if cursor.rowcount > 0:
+            flash("Rider rejected.", "warning")
+        else:
+            flash("Rider not found.", "error")
 
-            break
+    except mysql.connector.Error as err:
+        connection.rollback()
+        print("Reject rider error:", err)
+        flash("Unable to reject rider.", "error")
+
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect(url_for("admin_dashboard"))
 
