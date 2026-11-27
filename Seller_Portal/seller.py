@@ -21,10 +21,12 @@ FRONTEND_FOLDER = os.path.join(BASE_DIR, "frontend")
 UPLOAD_FOLDER = "/tmp/seller_uploads"
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-app.secret_key = (
-    os.environ.get("FRESHMEET_SECRET_KEY")
-    or secrets.token_hex(32)
-)
+SECRET_KEY = os.environ.get("FRESHMEAT_SECRET_KEY")
+
+if not SECRET_KEY:
+    raise RuntimeError("FRESHMEAT_SECRET_KEY is not configured!")
+
+app.secret_key = SECRET_KEY
 app.config["SESSION_COOKIE_NAME"] = "seller_session"
 
 app.config["MAX_CONTENT_LENGTH"] = 5 * 1024 * 1024
