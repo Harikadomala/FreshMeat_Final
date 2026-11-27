@@ -613,6 +613,31 @@ body {
   background: var(--danger-soft);
   color: var(--danger);
 }
+.approved {
+  background: var(--green-soft);
+  color: var(--green);
+}
+
+/* Rider approval buttons */
+.table-wrap button {
+  padding: 8px 12px;
+  font-size: 12px;
+  margin: 3px;
+}
+
+.table-wrap form:first-child button {
+  background: var(--green);
+  color: white;
+}
+
+.table-wrap form:last-child button {
+  background: var(--danger-soft);
+  color: var(--danger);
+}
+
+.table-wrap form button:hover {
+  opacity: 0.85;
+}
 
 /* Buttons & Actions */
 .actions {
