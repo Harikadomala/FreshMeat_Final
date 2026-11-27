@@ -83,20 +83,29 @@
     <div class="fm-splash-bar"></div>
   </div>
 </div>
+
 <script>
 (function() {
-  function dismissBikeSplash() {
     var splash = document.getElementById('fmBikeSplash');
-    if (splash && !splash.classList.contains('is-done')) {
-      splash.classList.add('is-done');
+
+    if (!splash) return;
+
+    if (sessionStorage.getItem('fmBikeSplashPlayed') === 'true') {
+        splash.classList.add('is-done');
+        return;
     }
-  }
-  window.addEventListener('DOMContentLoaded', function() {
+
+    sessionStorage.setItem('fmBikeSplashPlayed', 'true');
+
+    function dismissBikeSplash() {
+        splash.classList.add('is-done');
+    }
+
     setTimeout(dismissBikeSplash, 1400);
-  });
-  setTimeout(dismissBikeSplash, 2000);
+    setTimeout(dismissBikeSplash, 2000);
 })();
 </script>
+
 
 
 <!-- SIDEBAR -->
