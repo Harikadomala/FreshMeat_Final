@@ -557,9 +557,22 @@ def admin_logout():
     return redirect(url_for("admin_login"))
 
 
-# ---------------- ADMIN DASHBOARD ----------------
 
 
+# ---------------- ADMIN LOGIN PROTECTION ----------------
+
+def admin_required(func):
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+
+        if not session.get("admin_logged_in"):
+            flash("Please log in as admin.", "error")
+            return redirect(url_for("admin_login"))
+
+        return func(*args, **kwargs)
+
+    return wrapper
 
 # ---------------- ADMIN DASHBOARD ----------------
 
