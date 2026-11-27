@@ -24,7 +24,7 @@ const API = {
 
 let productsCache = [];
 let notificationsCache = [];
-
+let loginCompleted = false;
 
 // ======================================================
 // NOTIFICATION BELL SYSTEM
@@ -410,6 +410,7 @@ if (loginForm) {
                 body: JSON.stringify(data)
 
             });
+            loginCompleted = true;
 
             showMessage(
                 "loginMessage",
@@ -2240,21 +2241,22 @@ async function checkExistingSession() {
 
         const data = await apiRequest(API.me);
 
-
         document.getElementById("sellerName").textContent =
             data.seller.full_name || "Seller";
 
-
         await openPortal();
-
 
     } catch (error) {
 
-        document.getElementById("authView")
-            .classList.remove("hidden");
+        if (!loginCompleted) {
 
-        document.getElementById("portalView")
-            .classList.add("hidden");
+            document.getElementById("authView")
+                .classList.remove("hidden");
+
+            document.getElementById("portalView")
+                .classList.add("hidden");
+
+        }
 
     }
 
@@ -2263,8 +2265,6 @@ async function checkExistingSession() {
 
 // Start session check
 checkExistingSession();
-
-
 // ======================================================
 // RIDER MANAGEMENT
 // ======================================================
