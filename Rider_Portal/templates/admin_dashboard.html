@@ -261,39 +261,98 @@
 
     </section>
 
-    <section class="panel" id="rider">
+    
+<section class="panel" id="rider">
 
-        <h2>Rider Information</h2>
+    <h2>Rider Information</h2>
 
-        <p class="panel-sub">
-            Registered delivery partner details.
-        </p>
+    <p class="panel-sub">
+        Registered delivery partner details and approval management.
+    </p>
 
-        <div class="info-grid">
+    <div class="table-wrap">
 
-            <div class="info-item">
-                <strong>RIDER NAME</strong>
-                {{ rider.name }}
-            </div>
+        <table>
 
-            <div class="info-item">
-                <strong>RIDER ID</strong>
-                {{ rider.id }}
-            </div>
+            <thead>
+                <tr>
+                    <th>Rider ID</th>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Vehicle Number</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
 
-            <div class="info-item">
-                <strong>PHONE</strong>
-                {{ rider.phone }}
-            </div>
+            <tbody>
 
-            <div class="info-item">
-                <strong>ACCOUNT STATUS</strong>
-                <span class="status accepted">{{ rider.status }}</span>
-            </div>
+                {% for rider in riders %}
 
-        </div>
+                <tr>
+                    <td>{{ rider.id }}</td>
+                    <td>{{ rider.name }}</td>
+                    <td>{{ rider.phone }}</td>
+                    <td>{{ rider.email }}</td>
+                    <td>{{ rider.vehicle }}</td>
 
-    </section>
+                    <td>
+                        <span class="status {{ rider.status|lower }}">
+                            {{ rider.status }}
+                        </span>
+                    </td>
+
+                    <td>
+
+                        {% if rider.status == "Pending" %}
+
+                        <form method="POST"
+                              action="{{ url_for('approve_rider', rider_id=rider.id) }}"
+                              style="display:inline">
+
+                            <button type="submit">
+                                Approve
+                            </button>
+
+                        </form>
+
+                        <form method="POST"
+                              action="{{ url_for('reject_rider', rider_id=rider.id) }}"
+                              style="display:inline">
+
+                            <button type="submit">
+                                Reject
+                            </button>
+
+                        </form>
+
+                        {% else %}
+
+                        <span>-</span>
+
+                        {% endif %}
+
+                    </td>
+                </tr>
+
+                {% else %}
+
+                <tr>
+                    <td colspan="7" style="text-align:center">
+                        No registered riders available.
+                    </td>
+                </tr>
+
+                {% endfor %}
+
+            </tbody>
+
+        </table>
+
+    </div>
+
+</section>
 
 </main>
 
