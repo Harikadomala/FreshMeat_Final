@@ -89,13 +89,31 @@
     var splash = document.getElementById('fmBikeSplash');
     if (splash && !splash.classList.contains('is-done')) {
       splash.classList.add('is-done');
+      setTimeout(function() {
+        splash.style.display = 'none';
+      }, 500);
     }
   }
+
   window.addEventListener('DOMContentLoaded', function() {
-    setTimeout(dismissBikeSplash, 1400);
+    var splash = document.getElementById('fmBikeSplash');
+    var showSplash = sessionStorage.getItem('show_bike_animation');
+
+    if (showSplash === null || showSplash === 'yes') {
+      sessionStorage.setItem('show_bike_animation', 'no');
+      
+      setTimeout(dismissBikeSplash, 1400);
+      setTimeout(dismissBikeSplash, 2000);
+    } else {
+      if (splash) {
+        splash.style.display = 'none';
+      }
+    }
   });
-  setTimeout(dismissBikeSplash, 2000);
 })();
+function triggerBikeAnimation() {
+  sessionStorage.setItem('show_bike_animation', 'yes');
+}
 </script>
 
 
